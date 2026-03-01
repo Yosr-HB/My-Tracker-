@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import '../styles/TaskTracker.css';
 import NavBar from "./NavBar";
+import ConfirmationModal from "./ConfirmationModal";
 
 const TaskTracker = () => {
   const [tasks, setTasks] = useState([]);
   const [inputValue, setInputValue] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
 
   // Add a new task
   const addTask = () => {
@@ -28,8 +31,23 @@ const TaskTracker = () => {
   };
 
   // Delete a task
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  const handleDeleteClick = (id) => {
+    const task = tasks.find(task => task.id === id);
+    setTaskToDelete(task);
+    setShowModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (taskToDelete) {
+      setTasks(tasks.filter(task => task.id !== taskToDelete.id));
+      setShowModal(false);
+      setTaskToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowModal(false);
+    setTaskToDelete(null);
   };
 
   return (
@@ -77,7 +95,7 @@ const TaskTracker = () => {
                   <div className="task-info">
                     <span className="date-text">{task.createdAt}</span>
                     <button
-                      onClick={() => deleteTask(task.id)}
+                      onClick={() => handleDeleteClick(task.id)}
                       className="delete-button"
                     >
                       Delete
@@ -89,6 +107,14 @@ const TaskTracker = () => {
           )}
         </div>
       </div>
+      
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        taskText={taskToDelete?.text || ""}
+      />
     </div>
   );
 };
