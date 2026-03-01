@@ -1,7 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import '../styles/TaskTracker.css';
 import NavBar from "./NavBar";
 import ConfirmationModal from "./ConfirmationModal";
+
+// Cookie utility functions
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+};
+
+const setCookie = (name, value, days = 365) => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+};
+
+const deleteCookie = (name) => {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+};
 
 const TaskTracker = () => {
   const [tasks, setTasks] = useState([]);
@@ -9,13 +27,35 @@ const TaskTracker = () => {
   const [showModal, setShowModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
 
+  // Load tasks from cookies on component mount
+  useEffect(() => {
+    const savedTasks = getCookie('tasks');
+    if (savedTasks) {
+      try {
+        const parsedTasks = JSON.parse(savedTasks);
+        setTasks(parsedTasks);
+      } catch (error) {
+        console.error('Error parsing saved tasks:', error);
+      }
+    }
+  }, []);
+
+  // Save tasks to cookies whenever tasks change
+  useEffect(() => {
+    if (tasks.length > 0) {
+      setCookie('tasks', JSON.stringify(tasks));
+    } else {
+      deleteCookie('tasks');
+    }
+  }, [tasks]);
+
   // Add a new task
   const addTask = () => {
     if (inputValue.trim() !== "") {
       const newTask = {
         id: Date.now(),
         text: inputValue,
-        completed: false,
+        status: 'pending', // Default status
         createdAt: new Date().toLocaleString()
       };
       setTasks([...tasks, newTask]);
