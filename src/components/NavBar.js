@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import '../styles/NavBar.css';
 
 const NavBar = () => {
@@ -7,25 +7,25 @@ const NavBar = () => {
     <nav className="navbar">
       <div className="nav-container">
         <div className="logo">
-          <Link to="/" className="logo-link">
+          <NavLink to="/" className="logo-link">
             TaskTracker App
-          </Link>
+          </NavLink>
         </div>
         <ul className="nav-list">
           <li className="nav-item">
-            <Link to="/" className="nav-link" activeClassName="active">
+            <NavLink to="/" className="nav-link" end>
               Home
-            </Link>
+            </NavLink>
           </li>
           <li className="nav-item">
-            <Link to="/tracker" className="nav-link" activeClassName="active">
+            <NavLink to="/tracker" className="nav-link">
               Task Tracker
-            </Link>
+            </NavLink>
           </li>
           <li className="nav-item">
-            <Link to="/me" className="nav-link" activeClassName="active">
+            <NavLink to="/me" className="nav-link">
               About Me
-            </Link>
+            </NavLink>
           </li>
           <li className="nav-item">
             <a href="http://localhost:5000/swagger" target="_blank" rel="noopener noreferrer" className="nav-link">
@@ -33,9 +33,9 @@ const NavBar = () => {
             </a>
           </li>
           <li className="nav-item">
-            <Link to="/hierarchy" className="nav-link" activeClassName="active">
+            <NavLink to="/hierarchy" className="nav-link">
               Task Hierarchy
-            </Link>
+            </NavLink>
           </li>
         </ul>
       </div>

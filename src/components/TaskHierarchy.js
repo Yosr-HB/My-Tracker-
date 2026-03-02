@@ -2,7 +2,24 @@ import React, { useState, useEffect } from "react";
 import '../styles/TaskHierarchy.css';
 import NavBar from "./NavBar";
 import ConfirmationModal from "./ConfirmationModal";
-import taskApi from "../services/api";
+
+// Cookie utility functions
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+};
+
+const setCookie = (name, value, days = 365) => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+};
+
+const deleteCookie = (name) => {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+};
 
 // Status configuration
 const STATUS_OPTIONS = [
@@ -29,43 +46,115 @@ const TaskHierarchy = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load tasks from API on component mount
+  // Load tasks from cookies on component mount
   useEffect(() => {
     loadTasks();
   }, []);
 
-  const loadTasks = async () => {
+  const loadTasks = () => {
     setLoading(true);
     setError(null);
     try {
-      const tasksData = await taskApi.getTasks();
-      setTasks(tasksData);
+      const cookieData = getCookie('task_hierarchy_tasks');
+      if (cookieData) {
+        const decodedData = decodeURIComponent(cookieData);
+        const parsedTasks = JSON.parse(decodedData);
+        setTasks(parsedTasks);
+      } else {
+        // Initialize with sample data if no cookies exist
+        const sampleTasks = [
+          {
+            id: 1,
+            text: "Learn React",
+            status: 'in-progress',
+            isMainTask: true,
+            createdAt: new Date().toLocaleString(),
+            lastModified: new Date().toLocaleString(),
+            subtasks: [
+              {
+                id: 101,
+                text: "Complete tutorial",
+                description: "Follow React official tutorial",
+                status: 'pending',
+                isMainTask: false,
+                createdAt: new Date().toLocaleString(),
+                lastModified: new Date().toLocaleString()
+              },
+              {
+                id: 102,
+                text: "Build first component",
+                description: "Create a simple React component",
+                status: 'done',
+                isMainTask: false,
+                createdAt: new Date().toLocaleString(),
+                lastModified: new Date().toLocaleString()
+              }
+            ]
+          },
+          {
+            id: 2,
+            text: "Build a task tracker",
+            status: 'done',
+            isMainTask: true,
+            createdAt: new Date().toLocaleString(),
+            lastModified: new Date().toLocaleString(),
+            subtasks: [
+              {
+                id: 201,
+                text: "Design UI",
+                description: "Create the user interface",
+                status: 'done',
+                isMainTask: false,
+                createdAt: new Date().toLocaleString(),
+                lastModified: new Date().toLocaleString()
+              }
+            ]
+          }
+        ];
+        setTasks(sampleTasks);
+        saveTasksToCookies(sampleTasks);
+      }
     } catch (err) {
-      setError('Failed to load tasks. Please check if the backend is running.');
+      setError('Failed to load tasks from cookies.');
       console.error('Error loading tasks:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const saveTasksToCookies = (tasksToSave) => {
+    try {
+      const cookieValue = encodeURIComponent(JSON.stringify(tasksToSave));
+      setCookie('task_hierarchy_tasks', cookieValue);
+    } catch (err) {
+      setError('Failed to save tasks to cookies.');
+      console.error('Error saving tasks:', err);
+    }
+  };
+
   // Add a new main task
-  const addMainTask = async () => {
+  const addMainTask = () => {
     if (inputValue.trim() !== "") {
       setLoading(true);
       setError(null);
       try {
-        const newTaskData = {
+        const now = new Date();
+        const newTask = {
+          id: Date.now(),
           text: inputValue,
           status: 'pending',
           isMainTask: true,
+          createdAt: now.toLocaleString(),
+          lastModified: now.toLocaleString(),
           subtasks: []
         };
         
-        const newTask = await taskApi.addTask(newTaskData);
-        setTasks([...tasks, newTask]);
+        const updatedTasks = [...tasks, newTask];
+        setTasks(updatedTasks);
+        saveTasksToCookies(updatedTasks);
         setInputValue("");
       } catch (err) {
-        setError('Failed to add main task. Please check if the backend is running.');
+        setError('Failed to add main task.');
         console.error('Error adding main task:', err);
       } finally {
         setLoading(false);
@@ -74,7 +163,7 @@ const TaskHierarchy = () => {
   };
 
   // Add a subtask to a main task
-  const addSubTask = async (mainTaskId) => {
+  const addSubTask = (mainTaskId) => {
     const taskInput = subTaskInputs[mainTaskId] || "";
     const taskDescription = subTaskDescriptions[mainTaskId] || "";
     
@@ -104,22 +193,23 @@ const TaskHierarchy = () => {
         const updatedSubtasks = [...(mainTask.subtasks || []), newSubTask];
         const updatedTask = {
           ...mainTask,
-          subtasks: updatedSubtasks
+          subtasks: updatedSubtasks,
+          lastModified: new Date().toLocaleString()
         };
 
-        const response = await taskApi.updateTask(mainTaskId, updatedTask);
-        
         // Update local state
-        setTasks(tasks.map(task => 
-          task.id === mainTaskId ? response : task
-        ));
+        const updatedTasks = tasks.map(task => 
+          task.id === mainTaskId ? updatedTask : task
+        );
+        setTasks(updatedTasks);
+        saveTasksToCookies(updatedTasks);
         
         // Clear individual inputs for this main task
         setSubTaskInputs({...subTaskInputs, [mainTaskId]: ""});
         setSubTaskDescriptions({...subTaskDescriptions, [mainTaskId]: ""});
         setSelectedMainTask(null);
       } catch (err) {
-        setError('Failed to add subtask. Please check if the backend is running.');
+        setError('Failed to add subtask.');
         console.error('Error adding subtask:', err);
       } finally {
         setLoading(false);
@@ -128,7 +218,7 @@ const TaskHierarchy = () => {
   };
 
   // Update main task status
-  const updateMainTaskStatus = async (taskId, newStatus) => {
+  const updateMainTaskStatus = (taskId, newStatus) => {
     setLoading(true);
     setError(null);
     try {
@@ -144,12 +234,13 @@ const TaskHierarchy = () => {
         lastModified: new Date().toLocaleString()
       };
 
-      const response = await taskApi.updateTask(taskId, updatedTask);
-      setTasks(tasks.map(task => 
-        task.id === taskId ? response : task
-      ));
+      const updatedTasks = tasks.map(task => 
+        task.id === taskId ? updatedTask : task
+      );
+      setTasks(updatedTasks);
+      saveTasksToCookies(updatedTasks);
     } catch (err) {
-      setError('Failed to update task. Please check if the backend is running.');
+      setError('Failed to update task.');
       console.error('Error updating task:', err);
     } finally {
       setLoading(false);
@@ -157,7 +248,7 @@ const TaskHierarchy = () => {
   };
 
   // Update subtask status
-  const updateSubTaskStatus = async (mainTaskId, subTaskId, newStatus) => {
+  const updateSubTaskStatus = (mainTaskId, subTaskId, newStatus) => {
     setLoading(true);
     setError(null);
     try {
@@ -175,15 +266,17 @@ const TaskHierarchy = () => {
 
       const updatedTask = {
         ...mainTask,
-        subtasks: updatedSubtasks
+        subtasks: updatedSubtasks,
+        lastModified: new Date().toLocaleString()
       };
 
-      const response = await taskApi.updateTask(mainTaskId, updatedTask);
-      setTasks(tasks.map(task => 
-        task.id === mainTaskId ? response : task
-      ));
+      const updatedTasks = tasks.map(task => 
+        task.id === mainTaskId ? updatedTask : task
+      );
+      setTasks(updatedTasks);
+      saveTasksToCookies(updatedTasks);
     } catch (err) {
-      setError('Failed to update subtask. Please check if the backend is running.');
+      setError('Failed to update subtask.');
       console.error('Error updating subtask:', err);
     } finally {
       setLoading(false);
@@ -196,7 +289,7 @@ const TaskHierarchy = () => {
     setShowModal(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (taskToDelete) {
       setLoading(true);
       setError(null);
@@ -215,23 +308,26 @@ const TaskHierarchy = () => {
 
           const updatedTask = {
             ...mainTask,
-            subtasks: updatedSubtasks
+            subtasks: updatedSubtasks,
+            lastModified: new Date().toLocaleString()
           };
 
-          const response = await taskApi.updateTask(taskToDelete.mainTaskId, updatedTask);
-          setTasks(tasks.map(task => 
-            task.id === taskToDelete.mainTaskId ? response : task
-          ));
+          const updatedTasks = tasks.map(task => 
+            task.id === taskToDelete.mainTaskId ? updatedTask : task
+          );
+          setTasks(updatedTasks);
+          saveTasksToCookies(updatedTasks);
         } else {
           // Delete main task
-          await taskApi.deleteTask(taskToDelete.task.id);
-          setTasks(tasks.filter(task => task.id !== taskToDelete.task.id));
+          const updatedTasks = tasks.filter(task => task.id !== taskToDelete.task.id);
+          setTasks(updatedTasks);
+          saveTasksToCookies(updatedTasks);
         }
         
         setShowModal(false);
         setTaskToDelete(null);
       } catch (err) {
-        setError('Failed to delete task. Please check if the backend is running.');
+        setError('Failed to delete task.');
         console.error('Error deleting task:', err);
       } finally {
         setLoading(false);
@@ -252,7 +348,7 @@ const TaskHierarchy = () => {
   };
 
   // Save edited subtask
-  const saveEditSubTask = async (mainTaskId, subTaskId) => {
+  const saveEditSubTask = (mainTaskId, subTaskId) => {
     if (editingText.trim() !== "") {
       setLoading(true);
       setError(null);
@@ -276,20 +372,22 @@ const TaskHierarchy = () => {
 
         const updatedTask = {
           ...mainTask,
-          subtasks: updatedSubtasks
+          subtasks: updatedSubtasks,
+          lastModified: new Date().toLocaleString()
         };
 
-        const response = await taskApi.updateTask(mainTaskId, updatedTask);
-        setTasks(tasks.map(task => 
-          task.id === mainTaskId ? response : task
-        ));
+        const updatedTasks = tasks.map(task => 
+          task.id === mainTaskId ? updatedTask : task
+        );
+        setTasks(updatedTasks);
+        saveTasksToCookies(updatedTasks);
         
         // Exit edit mode
         setEditingSubTask(null);
         setEditingText("");
         setEditingDescription("");
       } catch (err) {
-        setError('Failed to update subtask. Please check if the backend is running.');
+        setError('Failed to update subtask.');
         console.error('Error updating subtask:', err);
       } finally {
         setLoading(false);

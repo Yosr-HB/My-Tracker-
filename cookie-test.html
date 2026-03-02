@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Task Tracker Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 { color: #6f42c1; text-align: center; }
+        h2 { color: #495057; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+        
+        .btn-add { background-color: #6f42c1; color: white; }
+        .btn-add:hover { background-color: #5a32a3; transform: translateY(-1px); }
+        
+        .btn-clear { background-color: #dc3545; color: white; }
+        .btn-clear:hover { background-color: #c82333; transform: translateY(-1px); }
+        
+        .btn-export { background-color: #198754; color: white; }
+        .btn-export:hover { background-color: #157347; transform: translateY(-1px); }
+        
+        .btn-test { background-color: #0dcaf0; color: white; }
+        .btn-test:hover { background-color: #0aa5c7; transform: translateY(-1px); }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #6f42c1;
+        }
+        
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: #6f42c1; }
+        
+        .tasks-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #6f42c1;
+        }
+        
+        .task-text { font-weight: bold; }
+        .task-status { font-size: 0.9rem; color: #6c757d; }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .cookie-info {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Cookie Task Tracker Test</h1>
+        <p style="text-align: center; color: #6c757d;">Testing standalone cookie functionality</p>
+        
+        <div id="message"></div>
+        
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="Enter a new task...">
+            <button class="btn-add" onclick="addTask()">Add Task</button>
+            <button class="btn-clear" onclick="clearAll()">Clear All</button>
+            <button class="btn-export" onclick="exportTasks()">Export JSON</button>
+            <button class="btn-test" onclick="testCookies()">Test Cookies</button>
+        </div>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <h4>Total</h4>
+                <div class="stat-number" id="total">0</div>
+            </div>
+            <div class="stat-card">
+                <h4>Pending</h4>
+                <div class="stat-number" id="pending">0</div>
+            </div>
+            <div class="stat-card">
+                <h4>In Progress</h4>
+                <div class="stat-number" id="inProgress">0</div>
+            </div>
+            <div class="stat-card">
+                <h4>Done</h4>
+                <div class="stat-number" id="done">0</div>
+            </div>
+        </div>
+        
+        <h2>Tasks</h2>
+        <div class="tasks-list" id="tasksList">
+            <!-- Tasks will be added here -->
+        </div>
+        
+        <div class="cookie-info">
+            <h3>Cookie Information</h3>
+            <p><strong>Current Cookie:</strong> <span id="cookieValue">No cookie found</span></p>
+            <p><strong>Cookie Exists:</strong> <span id="cookieExists">No</span></p>
+            <p><strong>Tasks Loaded:</strong> <span id="tasksLoaded">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Cookie utility functions
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        function setCookie(name, value, days = 365) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+        }
+
+        // Task management
+        let tasks = [];
+
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = text;
+            messageDiv.className = `message ${type}`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+                messageDiv.className = '';
+            }, 3000);
+        }
+
+        function saveTasks() {
+            try {
+                const cookieValue = encodeURIComponent(JSON.stringify(tasks));
+                setCookie('task_tracker_tasks', cookieValue);
+                showMessage('Tasks saved to cookies!', 'success');
+                updateCookieInfo();
+            } catch (err) {
+                showMessage('Failed to save tasks to cookies.', 'error');
+            }
+        }
+
+        function loadTasks() {
+            try {
+                const cookieData = getCookie('task_tracker_tasks');
+                if (cookieData) {
+                    tasks = JSON.parse(decodeURIComponent(cookieData));
+                    showMessage('Tasks loaded from cookies!', 'success');
+                } else {
+                    // Initialize with sample data
+                    tasks = [
+                        {
+                            id: Date.now(),
+                            text: "Test task 1",
+                            status: 'pending',
+                            createdAt: new Date().toLocaleString(),
+                            lastModified: new Date().toLocaleString()
+                        },
+                        {
+                            id: Date.now() + 1,
+                            text: "Test task 2",
+                            status: 'in-progress',
+                            createdAt: new Date().toLocaleString(),
+                            lastModified: new Date().toLocaleString()
+                        }
+                    ];
+                    saveTasks();
+                }
+                renderTasks();
+                updateStats();
+                updateCookieInfo();
+            } catch (err) {
+                showMessage('Failed to load tasks from cookies.', 'error');
+                console.error('Error loading tasks:', err);
+            }
+        }
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const text = input.value.trim();
+            
+            if (text) {
+                const newTask = {
+                    id: Date.now(),
+                    text: text,
+                    status: 'pending',
+                    createdAt: new Date().toLocaleString(),
+                    lastModified: new Date().toLocaleString()
+                };
+                
+                tasks.push(newTask);
+                input.value = '';
+                saveTasks();
+                renderTasks();
+                updateStats();
+            }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+            renderTasks();
+            updateStats();
+        }
+
+        function updateTaskStatus(id, status) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.status = status;
+                task.lastModified = new Date().toLocaleString();
+                saveTasks();
+                renderTasks();
+                updateStats();
+            }
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all tasks?')) {
+                tasks = [];
+                deleteCookie('task_tracker_tasks');
+                showMessage('All tasks cleared!', 'success');
+                renderTasks();
+                updateStats();
+                updateCookieInfo();
+            }
+        }
+
+        function exportTasks() {
+            try {
+                const dataStr = JSON.stringify(tasks, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'tasks-export.json';
+                link.click();
+                URL.revokeObjectURL(url);
+                showMessage('Tasks exported successfully!', 'success');
+            } catch (err) {
+                showMessage('Failed to export tasks.', 'error');
+            }
+        }
+
+        function testCookies() {
+            // Test cookie functionality
+            const testValue = 'test_' + Date.now();
+            setCookie('test_cookie', testValue, 1);
+            const retrievedValue = getCookie('test_cookie');
+            
+            if (retrievedValue === testValue) {
+                showMessage('✅ Cookie test passed! Cookies are working correctly.', 'success');
+                deleteCookie('test_cookie');
+            } else {
+                showMessage('❌ Cookie test failed! Cookies may be disabled.', 'error');
+            }
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksList');
+            container.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">No tasks yet. Add one above!</p>';
+                return;
+            }
+            
+            tasks.forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = `task-item status-${task.status}`;
+                
+                const statusLabel = getStatusLabel(task.status);
+                
+                taskDiv.innerHTML = `
+                    <div>
+                        <div class="task-text">${task.text}</div>
+                        <div class="task-status">${statusLabel} • Created: ${task.createdAt}</div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <select onchange="updateTaskStatus(${task.id}, this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Pending</option>
+                            <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>🔄 In Progress</option>
+                            <option value="done" ${task.status === 'done' ? 'selected' : ''}>✅ Done</option>
+                            <option value="cancelled" ${task.status === 'cancelled' ? 'selected' : ''}>❌ Cancelled</option>
+                            <option value="blocked" ${task.status === 'blocked' ? 'selected' : ''}>🚧 Blocked</option>
+                        </select>
+                        <button class="btn-clear" onclick="deleteTask(${task.id})" style="padding: 5px 10px; font-size: 0.8rem;">Delete</button>
+                    </div>
+                `;
+                
+                container.appendChild(taskDiv);
+            });
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pending': '⏳ Pending',
+                'in-progress': '🔄 In Progress',
+                'done': '✅ Done',
+                'cancelled': '❌ Cancelled',
+                'blocked': '🚧 Blocked'
+            };
+            return labels[status] || status;
+        }
+
+        function updateStats() {
+            const total = tasks.length;
+            const pending = tasks.filter(t => t.status === 'pending').length;
+            const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+            const done = tasks.filter(t => t.status === 'done').length;
+            
+            document.getElementById('total').textContent = total;
+            document.getElementById('pending').textContent = pending;
+            document.getElementById('inProgress').textContent = inProgress;
+            document.getElementById('done').textContent = done;
+        }
+
+        function updateCookieInfo() {
+            const cookieData = getCookie('task_tracker_tasks');
+            document.getElementById('cookieExists').textContent = cookieData ? 'Yes' : 'No';
+            document.getElementById('cookieValue').textContent = cookieData ? 'Cookie found' : 'No cookie found';
+            document.getElementById('tasksLoaded').textContent = tasks.length;
+        }
+
+        // Initialize
+        window.onload = function() {
+            loadTasks();
+            
+            // Add Enter key support
+            document.getElementById('taskInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTask();
+                }
+            });
+        };
+    </script>
+</body>
+</html>

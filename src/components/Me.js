@@ -5,10 +5,10 @@ import NavBar from "./NavBar";
 
 const Me = () => {
   return (
-    <div>
+    <>
       <NavBar />
       <div className="container">
-        <h1 className="title">Hello this is Yoss</h1>
+        <h1 className="title">Hello this is Yoshs</h1>
         <p className="description">Welcome to the /me page!</p>
         <div className="button-container">
           <Link to="/" className="primary-button">
@@ -19,7 +19,7 @@ const Me = () => {
           </Link>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

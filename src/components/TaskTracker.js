@@ -13,7 +13,7 @@ const getCookie = (name) => {
 
 const setCookie = (name, value, days = 365) => {
   const expires = new Date();
-  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
 };
 
@@ -41,7 +41,8 @@ const TaskTracker = () => {
     const savedTasks = getCookie('tasks');
     if (savedTasks) {
       try {
-        const parsedTasks = JSON.parse(savedTasks);
+        const decodedData = decodeURIComponent(savedTasks);
+        const parsedTasks = JSON.parse(decodedData);
         setTasks(parsedTasks);
       } catch (error) {
         console.error('Error parsing saved tasks:', error);
@@ -83,6 +84,39 @@ const TaskTracker = () => {
   };
 
 
+  // Export tasks to JSON
+  const exportTasks = () => {
+    try {
+      const dataStr = JSON.stringify(tasks, null, 2);
+      const dataBlob = new Blob([dataStr], {type: 'application/json'});
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tasks-export.json';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export tasks:', err);
+    }
+  };
+
+  // Import tasks from JSON file
+  const importTasks = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedTasks = JSON.parse(e.target.result);
+          setTasks(importedTasks);
+        } catch (err) {
+          console.error('Failed to import tasks. Invalid JSON file:', err);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   // Delete a task
   const handleDeleteClick = (id) => {
     const task = tasks.find(task => task.id === id);
@@ -122,6 +156,22 @@ const TaskTracker = () => {
           <button onClick={addTask} className="add-task-button">
             Add Task
           </button>
+        </div>
+
+        {/* Export/Import Section */}
+        <div className="export-import-section">
+          <button onClick={exportTasks} className="export-button">
+            Export JSON
+          </button>
+          <label className="import-button">
+            Import JSON
+            <input
+              type="file"
+              accept=".json"
+              onChange={importTasks}
+              style={{ display: 'none' }}
+            />
+          </label>
         </div>
 
         {/* Tasks List */}
