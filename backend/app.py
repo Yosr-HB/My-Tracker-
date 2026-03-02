@@ -17,7 +17,7 @@ def get_next_id():
         return 1
     return max(task['id'] for task in tasks_db) + 1
 
-def create_task(text, status='pending', is_main_task=True):
+def create_task(text, status='pending', is_main_task=True, description=None):
     """Create a new task"""
     now = datetime.now().strftime("%m/%d/%Y, %I:%M %p")
     task = {
@@ -28,6 +28,10 @@ def create_task(text, status='pending', is_main_task=True):
         'createdAt': now,
         'lastModified': now
     }
+    
+    # Add description if provided
+    if description:
+        task['description'] = description
     
     # Add subtasks array for main tasks
     if is_main_task:

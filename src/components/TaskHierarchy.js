@@ -17,6 +17,9 @@ const TaskHierarchy = () => {
   const [tasks, setTasks] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [subTaskInput, setSubTaskInput] = useState("");
+  const [subTaskDescription, setSubTaskDescription] = useState(""); // Add description state
+  const [subTaskInputs, setSubTaskInputs] = useState({}); // Individual subtask inputs per main task
+  const [subTaskDescriptions, setSubTaskDescriptions] = useState({}); // Individual descriptions per main task
   const [selectedMainTask, setSelectedMainTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
@@ -69,7 +72,10 @@ const TaskHierarchy = () => {
 
   // Add a subtask to a main task
   const addSubTask = async (mainTaskId) => {
-    if (subTaskInput.trim() !== "") {
+    const taskInput = subTaskInputs[mainTaskId] || "";
+    const taskDescription = subTaskDescriptions[mainTaskId] || "";
+    
+    if (taskInput.trim() !== "") {
       setLoading(true);
       setError(null);
       try {
@@ -80,10 +86,11 @@ const TaskHierarchy = () => {
           return;
         }
 
-        // Create new subtask
+        // Create new subtask with description
         const newSubTask = {
           id: Date.now(),
-          text: subTaskInput,
+          text: taskInput,
+          description: taskDescription, // Add description field
           status: 'pending',
           isMainTask: false,
           createdAt: new Date().toLocaleString(),
@@ -104,7 +111,9 @@ const TaskHierarchy = () => {
           task.id === mainTaskId ? response : task
         ));
         
-        setSubTaskInput("");
+        // Clear individual inputs for this main task
+        setSubTaskInputs({...subTaskInputs, [mainTaskId]: ""});
+        setSubTaskDescriptions({...subTaskDescriptions, [mainTaskId]: ""});
         setSelectedMainTask(null);
       } catch (err) {
         setError('Failed to add subtask. Please check if the backend is running.');
@@ -394,11 +403,20 @@ const TaskHierarchy = () => {
                     <div className="input-section">
                       <input
                         type="text"
-                        value={subTaskInput}
-                        onChange={(e) => setSubTaskInput(e.target.value)}
+                        value={subTaskInputs[mainTask.id] || ""}
+                        onChange={(e) => setSubTaskInputs({...subTaskInputs, [mainTask.id]: e.target.value})}
                         onKeyPress={(e) => e.key === 'Enter' && addSubTask(mainTask.id)}
                         placeholder="Enter a subtask..."
                         className="subtask-input"
+                        disabled={loading}
+                      />
+                      <input
+                        type="text"
+                        value={subTaskDescriptions[mainTask.id] || ""}
+                        onChange={(e) => setSubTaskDescriptions({...subTaskDescriptions, [mainTask.id]: e.target.value})}
+                        onKeyPress={(e) => e.key === 'Enter' && addSubTask(mainTask.id)}
+                        placeholder="Enter description (optional)..."
+                        className="subtask-description-input"
                         disabled={loading}
                       />
                       <button 
@@ -420,6 +438,9 @@ const TaskHierarchy = () => {
                           <li key={subtask.id} className={`subtask-item status-${subtask.status}`}>
                             <div className="subtask-content">
                               <span className="subtask-text">{subtask.text}</span>
+                              {subtask.description && (
+                                <span className="subtask-description">{subtask.description}</span>
+                              )}
                             </div>
                             <div className="subtask-actions">
                               <select
