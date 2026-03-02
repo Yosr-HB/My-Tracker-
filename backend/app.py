@@ -17,16 +17,22 @@ def get_next_id():
         return 1
     return max(task['id'] for task in tasks_db) + 1
 
-def create_task(text, status='pending'):
+def create_task(text, status='pending', is_main_task=True):
     """Create a new task"""
     now = datetime.now().strftime("%m/%d/%Y, %I:%M %p")
     task = {
         'id': get_next_id(),
         'text': text,
         'status': status,
+        'isMainTask': is_main_task,
         'createdAt': now,
         'lastModified': now
     }
+    
+    # Add subtasks array for main tasks
+    if is_main_task:
+        task['subtasks'] = []
+    
     return task
 
 @app.route('/api/tasks', methods=['GET'])
@@ -49,15 +55,22 @@ def add_task():
 
 @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
 def update_task(task_id):
-    """Update task status"""
+    """Update task status or subtasks"""
     data = request.get_json()
     
-    if not data or 'status' not in data:
-        return jsonify({'error': 'Status is required'}), 400
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
     
     for task in tasks_db:
         if task['id'] == task_id:
-            task['status'] = data['status']
+            # Update task properties
+            if 'status' in data:
+                task['status'] = data['status']
+            if 'text' in data:
+                task['text'] = data['text']
+            if 'subtasks' in data:
+                task['subtasks'] = data['subtasks']
+            
             task['lastModified'] = datetime.now().strftime("%m/%d/%Y, %I:%M %p")
             return jsonify(task)
     

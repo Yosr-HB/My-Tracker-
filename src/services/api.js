@@ -105,6 +105,38 @@ export const taskApi = {
       console.error('Health check failed:', error);
       throw error;
     }
+  },
+
+  // Get a specific task
+  async getTask(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch task');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching task:', error);
+      throw error;
+    }
+  },
+
+  // Clear all tasks (for testing)
+  async clearTasks() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/clear`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to clear tasks');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error clearing tasks:', error);
+      throw error;
+    }
   }
 };
 

@@ -32,6 +32,11 @@ const NavBar = () => {
               API Docs
             </a>
           </li>
+          <li className="nav-item">
+            <Link to="/hierarchy" className="nav-link" activeClassName="active">
+              Task Hierarchy
+            </Link>
+          </li>
         </ul>
       </div>
     </nav>
