@@ -27,6 +27,11 @@ const NavBar = () => {
               About Me
             </Link>
           </li>
+          <li className="nav-item">
+            <a href="http://localhost:5000/swagger" target="_blank" rel="noopener noreferrer" className="nav-link">
+              API Docs
+            </a>
+          </li>
         </ul>
       </div>
     </nav>
