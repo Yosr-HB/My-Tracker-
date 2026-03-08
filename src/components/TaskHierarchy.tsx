@@ -143,6 +143,7 @@ const TaskHierarchy: React.FC = () => {
       }
     } catch (err) {
       setError('Failed to load tasks from cookies.');
+      setError('Failed to load tasks from cookies.');
       console.error('Error loading tasks:', err);
     } finally {
       setLoading(false);
@@ -181,6 +182,7 @@ const TaskHierarchy: React.FC = () => {
         saveTasksToCookies(updatedTasks);
         setInputValue("");
       } catch (err) {
+        setError('Failed to add main task.');
         setError('Failed to add main task.');
         console.error('Error adding main task:', err);
       } finally {
@@ -224,6 +226,7 @@ const TaskHierarchy: React.FC = () => {
           lastModified: new Date().toLocaleString()
         };
 
+
         // Update local state
         const updatedTasks = tasks.map(task => 
           task.id === mainTaskId ? updatedTask : task
@@ -236,6 +239,7 @@ const TaskHierarchy: React.FC = () => {
         setSubTaskDescriptions({...subTaskDescriptions, [mainTaskId]: ""});
         setSelectedMainTask(null);
       } catch (err) {
+        setError('Failed to add subtask.');
         setError('Failed to add subtask.');
         console.error('Error adding subtask:', err);
       } finally {
@@ -267,6 +271,7 @@ const TaskHierarchy: React.FC = () => {
       setTasks(updatedTasks);
       saveTasksToCookies(updatedTasks);
     } catch (err) {
+      setError('Failed to update task.');
       setError('Failed to update task.');
       console.error('Error updating task:', err);
     } finally {
@@ -414,6 +419,7 @@ const TaskHierarchy: React.FC = () => {
         setEditingText("");
         setEditingDescription("");
       } catch (err) {
+        setError('Failed to update subtask.');
         setError('Failed to update subtask.');
         console.error('Error updating subtask:', err);
       } finally {
