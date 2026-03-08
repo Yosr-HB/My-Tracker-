@@ -40,13 +40,13 @@ function startProcess(command, args, options = {}) {
 // Start both servers
 async function startDevelopment() {
   try {
-    console.log('Backend: http://localhost:5000');
+    console.log('Backend: http://localhost:8000');
     console.log('Frontend: http://localhost:3000');
-    console.log('API Docs: http://localhost:5000/api/docs');
+    console.log('API Docs: http://localhost:8000/api/docs');
     console.log('');
 
     // Start backend in background
-    const backendPromise = startProcess('python', ['backend/start_backend.py'], {
+    const backendPromise = startProcess('python', ['backend/run_fastapi.py'], {
       cwd: __dirname + '/../'
     });
 

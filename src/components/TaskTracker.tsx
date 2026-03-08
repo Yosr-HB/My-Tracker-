@@ -1,28 +1,43 @@
-import React, { useState, useEffect } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import '../styles/TaskTracker.css';
 import NavBar from "./NavBar";
 import ConfirmationModal from "./ConfirmationModal";
 
 // Cookie utility functions
-const getCookie = (name) => {
+const getCookie = (name: string): string | null => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
   return null;
 };
 
-const setCookie = (name, value, days = 365) => {
+const setCookie = (name: string, value: string, days: number = 365): void => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
 };
 
-const deleteCookie = (name) => {
+const deleteCookie = (name: string): void => {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
 
 // Status configuration - Easy to modify and extend
-const STATUS_OPTIONS = [
+interface StatusOption {
+  value: string;
+  label: string;
+  color: string;
+}
+
+interface Task {
+  id: number;
+  text: string;
+  status: string;
+  createdAt: string;
+  lastModified: string;
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
   { value: 'pending', label: '⏳ Pending', color: '#ffc107' },
   { value: 'in-progress', label: '🔄 In Progress', color: '#0dcaf0' },
   { value: 'done', label: '✅ Done', color: '#198754' },
@@ -30,11 +45,11 @@ const STATUS_OPTIONS = [
   { value: 'blocked', label: '🚧 Blocked', color: '#fd7e14' }
 ];
 
-const TaskTracker = () => {
-  const [tasks, setTasks] = useState([]);
-  const [inputValue, setInputValue] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null);
+const TaskTracker: React.FC = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [inputValue, setInputValue] = useState<string>("");
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   // Load tasks from cookies on component mount
   useEffect(() => {
@@ -42,7 +57,7 @@ const TaskTracker = () => {
     if (savedTasks) {
       try {
         const decodedData = decodeURIComponent(savedTasks);
-        const parsedTasks = JSON.parse(decodedData);
+        const parsedTasks: Task[] = JSON.parse(decodedData);
         setTasks(parsedTasks);
       } catch (error) {
         console.error('Error parsing saved tasks:', error);
@@ -60,10 +75,10 @@ const TaskTracker = () => {
   }, [tasks]);
 
   // Add a new task
-  const addTask = () => {
+  const addTask = (): void => {
     if (inputValue.trim() !== "") {
       const now = new Date();
-      const newTask = {
+      const newTask: Task = {
         id: Date.now(),
         text: inputValue,
         status: 'pending', // Default status
@@ -76,16 +91,15 @@ const TaskTracker = () => {
   };
 
   // Update task status
-  const updateTaskStatus = (id, newStatus) => {
+  const updateTaskStatus = (id: number, newStatus: string): void => {
     const now = new Date();
     setTasks(tasks.map(task => 
       task.id === id ? { ...task, status: newStatus, lastModified: now.toLocaleString() } : task
     ));
   };
 
-
   // Export tasks to JSON
-  const exportTasks = () => {
+  const exportTasks = (): void => {
     try {
       const dataStr = JSON.stringify(tasks, null, 2);
       const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -101,13 +115,13 @@ const TaskTracker = () => {
   };
 
   // Import tasks from JSON file
-  const importTasks = (event) => {
-    const file = event.target.files[0];
+  const importTasks = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const importedTasks = JSON.parse(e.target.result);
+          const importedTasks: Task[] = JSON.parse(e.target?.result as string);
           setTasks(importedTasks);
         } catch (err) {
           console.error('Failed to import tasks. Invalid JSON file:', err);
@@ -118,13 +132,13 @@ const TaskTracker = () => {
   };
 
   // Delete a task
-  const handleDeleteClick = (id) => {
+  const handleDeleteClick = (id: number): void => {
     const task = tasks.find(task => task.id === id);
-    setTaskToDelete(task);
+    setTaskToDelete(task || null);
     setShowModal(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = (): void => {
     if (taskToDelete) {
       setTasks(tasks.filter(task => task.id !== taskToDelete.id));
       setShowModal(false);
@@ -132,7 +146,7 @@ const TaskTracker = () => {
     }
   };
 
-  const cancelDelete = () => {
+  const cancelDelete = (): void => {
     setShowModal(false);
     setTaskToDelete(null);
   };

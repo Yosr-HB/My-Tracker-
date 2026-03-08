@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { NavLink } from "react-router-dom";
 import '../styles/NavBar.css';
 
@@ -28,7 +28,7 @@ const NavBar = () => {
             </NavLink>
           </li>
           <li className="nav-item">
-            <a href="http://localhost:5000/swagger" target="_blank" rel="noopener noreferrer" className="nav-link">
+            <a href="http://localhost:8000/swagger" target="_blank" rel="noopener noreferrer" className="nav-link">
               API Docs
             </a>
           </li>

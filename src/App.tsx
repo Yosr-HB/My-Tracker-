@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./components/Home";
 import Me from "./components/Me";
@@ -6,7 +6,7 @@ import TaskTracker from "./components/TaskTracker";
 import TaskHierarchy from "./components/TaskHierarchy";
 import CookieTaskTracker from "./components/CookieTaskTracker";
 
-const App = () => {
+const App: React.FC = () => {
   return (
     <Router>
       <div>

@@ -1,10 +1,42 @@
-// API service for connecting to Python Flask backend
-const API_BASE_URL = 'http://localhost:5000/api';
+// API service for connecting to Python FastAPI backend
+const API_BASE_URL = 'http://localhost:8000/api';
+
+// Type definitions
+export interface Task {
+  id: number;
+  text: string;
+  status: string;
+  createdAt: string;
+  lastModified: string;
+}
+
+export interface TaskData {
+  text: string;
+  status: string;
+}
+
+export interface UpdateData {
+  status: string;
+}
+
+export interface Stats {
+  total: number;
+  pending: number;
+  inProgress: number;
+  done: number;
+  cancelled: number;
+  blocked: number;
+}
+
+export interface HealthCheck {
+  status: string;
+  message: string;
+}
 
 // API endpoints
 export const taskApi = {
   // Get all tasks
-  async getTasks() {
+  async getTasks(): Promise<Task[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks`);
       if (!response.ok) {
@@ -18,7 +50,7 @@ export const taskApi = {
   },
 
   // Add a new task
-  async addTask(taskData) {
+  async addTask(taskData: TaskData): Promise<Task> {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'POST',
@@ -40,7 +72,7 @@ export const taskApi = {
   },
 
   // Update task status
-  async updateTask(id, updateData) {
+  async updateTask(id: number, updateData: UpdateData): Promise<Task> {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
         method: 'PUT',
@@ -62,7 +94,7 @@ export const taskApi = {
   },
 
   // Delete a task
-  async deleteTask(id) {
+  async deleteTask(id: number): Promise<{ message: string }> {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
         method: 'DELETE',
@@ -80,7 +112,7 @@ export const taskApi = {
   },
 
   // Get task statistics
-  async getStats() {
+  async getStats(): Promise<Stats> {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/stats`);
       if (!response.ok) {
@@ -94,7 +126,7 @@ export const taskApi = {
   },
 
   // Health check
-  async healthCheck() {
+  async healthCheck(): Promise<HealthCheck> {
     try {
       const response = await fetch(`${API_BASE_URL}/health`);
       if (!response.ok) {
@@ -108,7 +140,7 @@ export const taskApi = {
   },
 
   // Get a specific task
-  async getTask(id) {
+  async getTask(id: number): Promise<Task> {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${id}`);
       if (!response.ok) {
@@ -122,7 +154,7 @@ export const taskApi = {
   },
 
   // Clear all tasks (for testing)
-  async clearTasks() {
+  async clearTasks(): Promise<{ message: string }> {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/clear`, {
         method: 'DELETE',

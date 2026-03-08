@@ -1,7 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 module.exports = {
- entry: "./src/index.js",
+ entry: "./src/index.tsx",
  output: {
    path: path.resolve(__dirname, "dist"),
    filename: "bundle.js",
@@ -9,9 +9,9 @@ module.exports = {
  module: {
    rules: [
      {
-       test: /\.(js|jsx)$/,
+       test: /\.(ts|tsx)$/,
        exclude: /node_modules/,
-       use: "babel-loader",
+       use: "ts-loader",
      },
      {
        test: /\.css$/,
@@ -31,13 +31,13 @@ module.exports = {
    proxy: [
      {
        context: ["/api"],
-       target: "http://localhost:5000",
+       target: "http://localhost:8000",
        changeOrigin: true,
        secure: false,
      },
    ],
  },
  resolve: {
-   extensions: [".js", ".jsx"],
+   extensions: [".ts", ".tsx", ".js", ".jsx"],
  },
 };

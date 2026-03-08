@@ -1,11 +1,26 @@
-import React, { useState, useEffect } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import '../styles/TaskTracker.css';
 import NavBar from "./NavBar";
 import ConfirmationModal from "./ConfirmationModal";
 import taskApi from "../services/api";
 
 // Status configuration - Easy to modify and extend
-const STATUS_OPTIONS = [
+interface StatusOption {
+  value: string;
+  label: string;
+  color: string;
+}
+
+interface Task {
+  id: number;
+  text: string;
+  status: string;
+  createdAt: string;
+  lastModified: string;
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
   { value: 'pending', label: '⏳ Pending', color: '#ffc107' },
   { value: 'in-progress', label: '🔄 In Progress', color: '#0dcaf0' },
   { value: 'done', label: '✅ Done', color: '#198754' },
@@ -13,24 +28,24 @@ const STATUS_OPTIONS = [
   { value: 'blocked', label: '🚧 Blocked', color: '#fd7e14' }
 ];
 
-const TaskTrackerAPI = () => {
-  const [tasks, setTasks] = useState([]);
-  const [inputValue, setInputValue] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const TaskTrackerAPI: React.FC = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [inputValue, setInputValue] = useState<string>("");
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load tasks from API on component mount
   useEffect(() => {
     loadTasks();
   }, []);
 
-  const loadTasks = async () => {
+  const loadTasks = async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      const tasksData = await taskApi.getTasks();
+      const tasksData: Task[] = await taskApi.getTasks();
       setTasks(tasksData);
     } catch (err) {
       setError('Failed to load tasks. Please check if the backend is running.');
@@ -41,7 +56,7 @@ const TaskTrackerAPI = () => {
   };
 
   // Add a new task
-  const addTask = async () => {
+  const addTask = async (): Promise<void> => {
     if (inputValue.trim() !== "") {
       setLoading(true);
       setError(null);
@@ -51,7 +66,7 @@ const TaskTrackerAPI = () => {
           status: 'pending'
         };
         
-        const newTask = await taskApi.addTask(newTaskData);
+        const newTask: Task = await taskApi.addTask(newTaskData);
         setTasks([...tasks, newTask]);
         setInputValue("");
       } catch (err) {
@@ -64,11 +79,11 @@ const TaskTrackerAPI = () => {
   };
 
   // Update task status
-  const updateTaskStatus = async (id, newStatus) => {
+  const updateTaskStatus = async (id: number, newStatus: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      const updatedTask = await taskApi.updateTask(id, { status: newStatus });
+      const updatedTask: Task = await taskApi.updateTask(id, { status: newStatus });
       setTasks(tasks.map(task => 
         task.id === id ? updatedTask : task
       ));
@@ -81,12 +96,12 @@ const TaskTrackerAPI = () => {
   };
 
   // Delete a task
-  const handleDeleteClick = (task) => {
+  const handleDeleteClick = (task: Task): void => {
     setTaskToDelete(task);
     setShowModal(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (): Promise<void> => {
     if (taskToDelete) {
       setLoading(true);
       setError(null);
@@ -104,7 +119,7 @@ const TaskTrackerAPI = () => {
     }
   };
 
-  const cancelDelete = () => {
+  const cancelDelete = (): void => {
     setShowModal(false);
     setTaskToDelete(null);
   };

@@ -1,7 +1,19 @@
-import React from "react";
+import * as React from "react";
 import '../styles/ConfirmationModal.css';
 
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, taskText }) => {
+interface ConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  taskText: string;
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  taskText 
+}) => {
   if (!isOpen) return null;
 
   return (

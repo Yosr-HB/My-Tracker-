@@ -1,28 +1,55 @@
-import React, { useState, useEffect } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import '../styles/TaskHierarchy.css';
 import NavBar from "./NavBar";
 import ConfirmationModal from "./ConfirmationModal";
 
 // Cookie utility functions
-const getCookie = (name) => {
+const getCookie = (name: string): string | null => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
   return null;
 };
 
-const setCookie = (name, value, days = 365) => {
+const setCookie = (name: string, value: string, days: number = 365): void => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
 };
 
-const deleteCookie = (name) => {
+const deleteCookie = (name: string): void => {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
 
 // Status configuration
-const STATUS_OPTIONS = [
+interface StatusOption {
+  value: string;
+  label: string;
+  color: string;
+}
+
+interface SubTask {
+  id: number;
+  text: string;
+  description: string;
+  status: string;
+  isMainTask: boolean;
+  createdAt: string;
+  lastModified: string;
+}
+
+interface MainTask {
+  id: number;
+  text: string;
+  status: string;
+  isMainTask: boolean;
+  createdAt: string;
+  lastModified: string;
+  subtasks: SubTask[];
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
   { value: 'pending', label: '⏳ Pending', color: '#ffc107' },
   { value: 'in-progress', label: '🔄 In Progress', color: '#0dcaf0' },
   { value: 'done', label: '✅ Done', color: '#198754' },
@@ -30,39 +57,39 @@ const STATUS_OPTIONS = [
   { value: 'blocked', label: '🚧 Blocked', color: '#fd7e14' }
 ];
 
-const TaskHierarchy = () => {
-  const [tasks, setTasks] = useState([]);
-  const [inputValue, setInputValue] = useState("");
-  const [subTaskInput, setSubTaskInput] = useState("");
-  const [subTaskDescription, setSubTaskDescription] = useState(""); // Add description state
-  const [subTaskInputs, setSubTaskInputs] = useState({}); // Individual subtask inputs per main task
-  const [subTaskDescriptions, setSubTaskDescriptions] = useState({}); // Individual descriptions per main task
-  const [editingSubTask, setEditingSubTask] = useState(null); // Track which subtask is being edited
-  const [editingText, setEditingText] = useState(""); // Text for editing
-  const [editingDescription, setEditingDescription] = useState(""); // Description for editing
-  const [selectedMainTask, setSelectedMainTask] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const TaskHierarchy: React.FC = () => {
+  const [tasks, setTasks] = useState<MainTask[]>([]);
+  const [inputValue, setInputValue] = useState<string>("");
+  const [subTaskInput, setSubTaskInput] = useState<string>("");
+  const [subTaskDescription, setSubTaskDescription] = useState<string>(""); // Add description state
+  const [subTaskInputs, setSubTaskInputs] = useState<Record<number, string>>({}); // Individual subtask inputs per main task
+  const [subTaskDescriptions, setSubTaskDescriptions] = useState<Record<number, string>>({}); // Individual descriptions per main task
+  const [editingSubTask, setEditingSubTask] = useState<number | null>(null); // Track which subtask is being edited
+  const [editingText, setEditingText] = useState<string>(""); // Text for editing
+  const [editingDescription, setEditingDescription] = useState<string>(""); // Description for editing
+  const [selectedMainTask, setSelectedMainTask] = useState<number | null>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [taskToDelete, setTaskToDelete] = useState<{ task: MainTask | SubTask; isSubTask: boolean; mainTaskId?: number } | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load tasks from cookies on component mount
   useEffect(() => {
     loadTasks();
   }, []);
 
-  const loadTasks = () => {
+  const loadTasks = (): void => {
     setLoading(true);
     setError(null);
     try {
       const cookieData = getCookie('task_hierarchy_tasks');
       if (cookieData) {
         const decodedData = decodeURIComponent(cookieData);
-        const parsedTasks = JSON.parse(decodedData);
+        const parsedTasks: MainTask[] = JSON.parse(decodedData);
         setTasks(parsedTasks);
       } else {
         // Initialize with sample data if no cookies exist
-        const sampleTasks = [
+        const sampleTasks: MainTask[] = [
           {
             id: 1,
             text: "Learn React",
@@ -122,7 +149,7 @@ const TaskHierarchy = () => {
     }
   };
 
-  const saveTasksToCookies = (tasksToSave) => {
+  const saveTasksToCookies = (tasksToSave: MainTask[]): void => {
     try {
       const cookieValue = encodeURIComponent(JSON.stringify(tasksToSave));
       setCookie('task_hierarchy_tasks', cookieValue);
@@ -133,13 +160,13 @@ const TaskHierarchy = () => {
   };
 
   // Add a new main task
-  const addMainTask = () => {
+  const addMainTask = (): void => {
     if (inputValue.trim() !== "") {
       setLoading(true);
       setError(null);
       try {
         const now = new Date();
-        const newTask = {
+        const newTask: MainTask = {
           id: Date.now(),
           text: inputValue,
           status: 'pending',
@@ -163,7 +190,7 @@ const TaskHierarchy = () => {
   };
 
   // Add a subtask to a main task
-  const addSubTask = (mainTaskId) => {
+  const addSubTask = (mainTaskId: number): void => {
     const taskInput = subTaskInputs[mainTaskId] || "";
     const taskDescription = subTaskDescriptions[mainTaskId] || "";
     
@@ -179,7 +206,7 @@ const TaskHierarchy = () => {
         }
 
         // Create new subtask with description
-        const newSubTask = {
+        const newSubTask: SubTask = {
           id: Date.now(),
           text: taskInput,
           description: taskDescription, // Add description field
@@ -191,7 +218,7 @@ const TaskHierarchy = () => {
 
         // Update main task with new subtask
         const updatedSubtasks = [...(mainTask.subtasks || []), newSubTask];
-        const updatedTask = {
+        const updatedTask: MainTask = {
           ...mainTask,
           subtasks: updatedSubtasks,
           lastModified: new Date().toLocaleString()
@@ -218,7 +245,7 @@ const TaskHierarchy = () => {
   };
 
   // Update main task status
-  const updateMainTaskStatus = (taskId, newStatus) => {
+  const updateMainTaskStatus = (taskId: number, newStatus: string): void => {
     setLoading(true);
     setError(null);
     try {
@@ -228,7 +255,7 @@ const TaskHierarchy = () => {
         return;
       }
 
-      const updatedTask = {
+      const updatedTask: MainTask = {
         ...task,
         status: newStatus,
         lastModified: new Date().toLocaleString()
@@ -248,7 +275,7 @@ const TaskHierarchy = () => {
   };
 
   // Update subtask status
-  const updateSubTaskStatus = (mainTaskId, subTaskId, newStatus) => {
+  const updateSubTaskStatus = (mainTaskId: number, subTaskId: number, newStatus: string): void => {
     setLoading(true);
     setError(null);
     try {
@@ -264,7 +291,7 @@ const TaskHierarchy = () => {
           : subtask
       );
 
-      const updatedTask = {
+      const updatedTask: MainTask = {
         ...mainTask,
         subtasks: updatedSubtasks,
         lastModified: new Date().toLocaleString()
@@ -284,12 +311,12 @@ const TaskHierarchy = () => {
   };
 
   // Delete a task (main task or subtask)
-  const handleDeleteClick = (task, isSubTask = false, mainTaskId = null) => {
+  const handleDeleteClick = (task: MainTask | SubTask, isSubTask: boolean, mainTaskId?: number): void => {
     setTaskToDelete({ task, isSubTask, mainTaskId });
     setShowModal(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = (): void => {
     if (taskToDelete) {
       setLoading(true);
       setError(null);
@@ -306,7 +333,7 @@ const TaskHierarchy = () => {
             subtask.id !== taskToDelete.task.id
           );
 
-          const updatedTask = {
+          const updatedTask: MainTask = {
             ...mainTask,
             subtasks: updatedSubtasks,
             lastModified: new Date().toLocaleString()
@@ -335,20 +362,20 @@ const TaskHierarchy = () => {
     }
   };
 
-  const cancelDelete = () => {
+  const cancelDelete = (): void => {
     setShowModal(false);
     setTaskToDelete(null);
   };
 
   // Start editing a subtask
-  const startEditSubTask = (subtask) => {
+  const startEditSubTask = (subtask: SubTask): void => {
     setEditingSubTask(subtask.id);
     setEditingText(subtask.text);
     setEditingDescription(subtask.description || "");
   };
 
   // Save edited subtask
-  const saveEditSubTask = (mainTaskId, subTaskId) => {
+  const saveEditSubTask = (mainTaskId: number, subTaskId: number): void => {
     if (editingText.trim() !== "") {
       setLoading(true);
       setError(null);
@@ -370,7 +397,7 @@ const TaskHierarchy = () => {
             : subtask
         );
 
-        const updatedTask = {
+        const updatedTask: MainTask = {
           ...mainTask,
           subtasks: updatedSubtasks,
           lastModified: new Date().toLocaleString()
@@ -396,7 +423,7 @@ const TaskHierarchy = () => {
   };
 
   // Cancel editing
-  const cancelEditSubTask = () => {
+  const cancelEditSubTask = (): void => {
     setEditingSubTask(null);
     setEditingText("");
     setEditingDescription("");

@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import '../styles/CookieTaskTracker.css';
 import NavBar from "./NavBar";
 
 // Status configuration
-const STATUS_OPTIONS = [
+interface StatusOption {
+  value: string;
+  label: string;
+  color: string;
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
   { value: 'pending', label: '⏳ Pending', color: '#ffc107' },
   { value: 'in-progress', label: '🔄 In Progress', color: '#0dcaf0' },
   { value: 'done', label: '✅ Done', color: '#198754' },
@@ -11,30 +18,38 @@ const STATUS_OPTIONS = [
   { value: 'blocked', label: '🚧 Blocked', color: '#fd7e14' }
 ];
 
-const CookieTaskTracker = () => {
-  const [tasks, setTasks] = useState([]);
-  const [inputValue, setInputValue] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+interface Task {
+  id: number;
+  text: string;
+  status: string;
+  createdAt: string;
+  lastModified: string;
+}
+
+const CookieTaskTracker: React.FC = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [inputValue, setInputValue] = useState<string>("");
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Cookie utility functions
-  const getCookie = (name) => {
+  const getCookie = (name: string): string | null => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
     return null;
   };
 
-  const setCookie = (name, value, days = 365) => {
+  const setCookie = (name: string, value: string, days: number = 365): void => {
     const expires = new Date();
     expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
     document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
   };
 
-  const deleteCookie = (name) => {
+  const deleteCookie = (name: string): void => {
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
   };
 
@@ -43,17 +58,17 @@ const CookieTaskTracker = () => {
     loadTasksFromCookies();
   }, []);
 
-  const loadTasksFromCookies = () => {
+  const loadTasksFromCookies = (): void => {
     setLoading(true);
     setError(null);
     try {
       const cookieData = getCookie('task_tracker_tasks');
       if (cookieData) {
-        const parsedTasks = JSON.parse(decodeURIComponent(cookieData));
+        const parsedTasks: Task[] = JSON.parse(decodeURIComponent(cookieData));
         setTasks(parsedTasks);
       } else {
         // Initialize with sample data if no cookies exist
-        const sampleTasks = [
+        const sampleTasks: Task[] = [
           {
             id: 1,
             text: "Learn React",
@@ -87,7 +102,7 @@ const CookieTaskTracker = () => {
     }
   };
 
-  const saveTasksToCookies = (tasksToSave) => {
+  const saveTasksToCookies = (tasksToSave: Task[]): void => {
     try {
       const cookieValue = encodeURIComponent(JSON.stringify(tasksToSave));
       setCookie('task_tracker_tasks', cookieValue);
@@ -100,12 +115,12 @@ const CookieTaskTracker = () => {
   };
 
   // Add a new task
-  const addTask = () => {
+  const addTask = (): void => {
     if (inputValue.trim() !== "") {
       setLoading(true);
       setError(null);
       try {
-        const newTask = {
+        const newTask: Task = {
           id: Date.now(),
           text: inputValue.trim(),
           status: 'pending',
@@ -127,7 +142,7 @@ const CookieTaskTracker = () => {
   };
 
   // Update task status
-  const updateTaskStatus = (taskId, newStatus) => {
+  const updateTaskStatus = (taskId: number, newStatus: string): void => {
     setLoading(true);
     setError(null);
     try {
@@ -148,12 +163,12 @@ const CookieTaskTracker = () => {
   };
 
   // Delete a task
-  const handleDeleteClick = (task) => {
+  const handleDeleteClick = (task: Task): void => {
     setTaskToDelete(task);
     setShowModal(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = (): void => {
     if (taskToDelete) {
       setLoading(true);
       setError(null);
@@ -172,13 +187,13 @@ const CookieTaskTracker = () => {
     }
   };
 
-  const cancelDelete = () => {
+  const cancelDelete = (): void => {
     setShowModal(false);
     setTaskToDelete(null);
   };
 
   // Clear all tasks
-  const clearAllTasks = () => {
+  const clearAllTasks = (): void => {
     setLoading(true);
     setError(null);
     try {
@@ -195,7 +210,7 @@ const CookieTaskTracker = () => {
   };
 
   // Export tasks to JSON
-  const exportTasks = () => {
+  const exportTasks = (): void => {
     try {
       const dataStr = JSON.stringify(tasks, null, 2);
       const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -214,13 +229,13 @@ const CookieTaskTracker = () => {
   };
 
   // Import tasks from JSON file
-  const importTasks = (event) => {
-    const file = event.target.files[0];
+  const importTasks = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const importedTasks = JSON.parse(e.target.result);
+          const importedTasks: Task[] = JSON.parse(e.target?.result as string);
           setTasks(importedTasks);
           saveTasksToCookies(importedTasks);
           setSuccess('Tasks imported successfully!');
